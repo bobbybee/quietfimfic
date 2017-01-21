@@ -12,10 +12,8 @@ const endpoints = {
 
 const styles = fs.readFileSync("style.css");
 
-const templates = {
-    story: fs.readFileSync("story.html").toString(),
-    home: fs.readFileSync("home.html").toString()
-};
+const templates = fs.readdirSync("templates").reduce( (o, e) => (
+    o[e.slice(0, -5)] = fs.readFileSync("templates/"+e).toString(), o), {});
 
 const errcb = (err) => err ? console.error(err) : null;
 const erras = (err, v) => err ? console.error(err) : v;
