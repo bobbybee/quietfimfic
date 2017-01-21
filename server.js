@@ -3,8 +3,10 @@ const http = require("http"),
       request = require("request"),
       mustache = require("mustache")
 
-const STORY_ENDPOINT = "https://fimfiction.net/api/story.php?story=";
-const DOWNLOAD_ENDPOINT = "https://fimfiction.net/download_story.php?story=";
+const endpoints = {
+    "story": (id) => "https://fimfiction.net/api/story.php?story="+id,
+    "read":  (id) => "https://fimfiction.net/download_story.php?story="+id+"&html"
+};
 
 const styles = fs.readFileSync("style.css");
 
@@ -13,12 +15,22 @@ const templates = {
     home: fs.readFileSync("home.html").toString()
 };
 
+errcb = (err) => err ? console.error(err) : null;
+erras = (err, v) => err ? console.error(err) : v;
+srequest = (u, cb) => request(u, (e, r, b) => erras(e, cb(b)));
+
+cache = (endpoint, id) => "cache/" + endpoint + "/" + id;
+fetch = (ep, id, cb) => fs.readFile(cache(ep, id), (e, data) =>
+    e ? srequest(endpoints[ep](id), (r) => (fs.writeFile(cache(ep, id), r, errcb), cb(r)))
+    :    cb(data));
+
 const verbs = {
-    "read": (id, cb) => request(DOWNLOAD_ENDPOINT + id + "&html", (err, resp, body) => {
+    "read": (id, cb) => fetch("read", id, (body) => {
         cb(body + "<style>" + styles + "</style>");
     }),
 
-    "story": (id, cb) => request(STORY_ENDPOINT + id, (err, resp, body) => {
+    "story": (id, cb) => fetch("story", id, (body) => {
+        console.log(body);
         const story = JSON.parse(body).story;
         story.style = styles;
 
