@@ -25,9 +25,8 @@ const fetch = (ep, id, cb) => fs.readFile(cache(ep, id), (e, data) =>
                 :   cb(data));
 
 const verbs = {
-    "read": (id, cb) => fetch("read", id, (body) => {
-        cb(body + "<style>" + styles + "</style>");
-    }),
+    "read": (id, cb) => fetch("read", id, (body) =>
+        cb(body + "<style>" + styles + "</style>")),
 
     "story": (id, cb) => fetch("story", id, (body) => {
         const story = JSON.parse(body).story;
@@ -56,5 +55,4 @@ http.createServer( (req, res) => {
     } catch(e) {
         console.error(e);
     }
-
 }).listen(8080);
