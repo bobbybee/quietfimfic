@@ -11,6 +11,19 @@ const styles = fs.readFileSync("style.css");
 const templates = {
     story: fs.readFileSync("story.html").toString(),
     home: fs.readFileSync("home.html").toString()
+};
+
+const verbs = {
+    "read": (id, cb) => request(DOWNLOAD_ENDPOINT + id + "&html", (err, resp, body) => {
+        cb(body + "<style>" + styles + "</style>");
+    }),
+
+    "story": (id, cb) => request(STORY_ENDPOINT + id, (err, resp, body) => {
+        const story = JSON.parse(body).story;
+        story.style = styles;
+
+        cb(mustache.render(templates.story, story));
+    }),
 }
 
 http.createServer( (req, res) => {
@@ -21,33 +34,12 @@ http.createServer( (req, res) => {
     } else {
         const parts = req.url.split("/")
         const verb = parts[1];
-        const object = parts[2];
 
-        if(verb == "story") {
-           /* fetch the story via the legitimate API */
-
-            console.log(STORY_ENDPOINT + object);
-           request(STORY_ENDPOINT + object, (error, resp, body) => {
-               try {
-                   const story = JSON.parse(body).story;
-
-                   story.style = styles;
-
-                   res.end(mustache.render(templates.story, story));
-               } catch(e) {
-                   console.log("Bad body " + body);
-               }
-           });
-        } else if(verb == "read") {
-            /* fetch the story via the download HTML button (messy but meh) */
-
-            request(DOWNLOAD_ENDPOINT + object + "&html", (err, resp, body) => {
-                res.end(body + "<style>" + styles + "</style>");
-            });
+        if(typeof verbs[verb] !== 'undefined') {
+            verbs[verb](parts[2], (a) => res.end(a));
         } else {
             res.end("Unknown verb " + verb);
         }
     }
 
-    console.log(req.url);
 }).listen(8080);
